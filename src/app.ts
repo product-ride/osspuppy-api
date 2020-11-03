@@ -1,6 +1,7 @@
 import express from 'express';
 import morgan from 'morgan';
 import { load } from 'ts-dotenv';
+import { PrismaClient } from '@prisma/client';
 
 // load configurations from .env file or environmental variables
 const { NODE_ENV, PORT } = load({
@@ -16,16 +17,18 @@ const { NODE_ENV, PORT } = load({
     default: 'development'
   },
 });
-
 const app = express();
 const isProd = NODE_ENV === 'production';
+const prisma = new PrismaClient();
 
 // setup middlewares
 app.use(morgan(isProd? 'short': 'dev'));
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.json({ message: 'hello world' });
+app.get('/', async (req, res) => {
+  const users = await prisma.user.findMany();
+
+  res.json({ users });
 });
 
 app.listen(PORT, () => {
