@@ -1,10 +1,10 @@
 import express from 'express';
 import morgan from 'morgan';
 import { load } from 'ts-dotenv';
-import { PrismaClient } from '@prisma/client';
+import GHService from './gh';
 
 // load configurations from .env file or environmental variables
-const { NODE_ENV, PORT } = load({
+const { NODE_ENV, PORT, GH_CLIENT_ID, GH_CLIENT_SECRET, GH_REDIRECT_URI } = load({
   PORT: {
     type: Number,
     default: 8000
@@ -16,19 +16,40 @@ const { NODE_ENV, PORT } = load({
     ],
     default: 'development'
   },
+  GH_CLIENT_ID: String,
+  GH_CLIENT_SECRET: String,
+  GH_REDIRECT_URI: String
 });
 const app = express();
 const isProd = NODE_ENV === 'production';
-const prisma = new PrismaClient();
+const gh = new GHService({
+  clientId: GH_CLIENT_ID,
+  clientSecret: GH_CLIENT_SECRET,
+  redirectURI: GH_REDIRECT_URI,
+  scope: ['repo']
+})
 
 // setup middlewares
 app.use(morgan(isProd? 'short': 'dev'));
 app.use(express.json());
 
-app.get('/', async (req, res) => {
-  const users = await prisma.user.findMany();
+app.get('/auth/github', async (req, res) => {
+  const code = req.query.code as string;
 
-  res.json({ users });
+  if (!code || Array.isArray(code)) {
+    res.statusCode = 403;
+    res.send();
+  }
+
+  try {
+    await gh.auth(code);
+    const user = await gh.getUserInfo();
+
+    res.json({ user });
+  } catch (err) {
+    res.statusCode = 500;
+    res.end();
+  }
 });
 
 app.listen(PORT, () => {

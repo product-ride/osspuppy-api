@@ -12,8 +12,8 @@ model User {
   id Int @id @default(autoincrement())
   email String? @unique
   username String @unique
-  firstName String
-  lastName String?
+  name String
   ghToken String?
+  avatar String?
   sponsorWebhookSecret String? @unique
 }

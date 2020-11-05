@@ -109,21 +109,21 @@
     {
       "tag": "CreateField",
       "model": "User",
-      "field": "firstName",
+      "field": "name",
       "type": "String",
       "arity": "Required"
     },
     {
       "tag": "CreateField",
       "model": "User",
-      "field": "lastName",
+      "field": "ghToken",
       "type": "String",
       "arity": "Optional"
     },
     {
       "tag": "CreateField",
       "model": "User",
-      "field": "ghToken",
+      "field": "avatar",
       "type": "String",
       "arity": "Optional"
     },
