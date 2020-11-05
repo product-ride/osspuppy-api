@@ -1,10 +1,12 @@
 import express from 'express';
 import morgan from 'morgan';
 import { load } from 'ts-dotenv';
+import db from './db';
 import GHService from './gh';
+import { v4 as uuid } from 'uuid';
 
 // load configurations from .env file or environmental variables
-const { NODE_ENV, PORT, GH_CLIENT_ID, GH_CLIENT_SECRET, GH_REDIRECT_URI } = load({
+const { NODE_ENV, PORT, GH_CLIENT_ID, GH_CLIENT_SECRET, GH_REDIRECT_URI, FRONTEND_URI } = load({
   PORT: {
     type: Number,
     default: 8000
@@ -18,7 +20,8 @@ const { NODE_ENV, PORT, GH_CLIENT_ID, GH_CLIENT_SECRET, GH_REDIRECT_URI } = load
   },
   GH_CLIENT_ID: String,
   GH_CLIENT_SECRET: String,
-  GH_REDIRECT_URI: String
+  GH_REDIRECT_URI: String,
+  FRONTEND_URI: String
 });
 const app = express();
 const isProd = NODE_ENV === 'production';
@@ -42,10 +45,31 @@ app.get('/auth/github', async (req, res) => {
   }
 
   try {
-    await gh.auth(code);
-    const user = await gh.getUserInfo();
+    const token = await gh.auth(code);
+    // get user information
+    const userInfo = await gh.getUserInfo();
+    // save to database
+    let user = await db.user.findOne({
+      where: {
+        username: userInfo.username
+      }
+    });
 
-    res.json({ user });
+    if (!user) {
+      // create a new user
+      user = await db.user.create({
+        data: {
+          name: userInfo.name,
+          username: userInfo.username,
+          avatar: userInfo.avatar,
+          email: userInfo.email,
+          ghToken: token,
+          sponsorWebhookSecret: uuid()
+        }
+      })
+    }
+
+    res.redirect(FRONTEND_URI);
   } catch (err) {
     res.statusCode = 500;
     res.end();
