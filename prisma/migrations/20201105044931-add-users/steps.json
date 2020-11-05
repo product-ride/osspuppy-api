@@ -93,7 +93,7 @@
       "model": "User",
       "field": "username",
       "type": "String",
-      "arity": "Optional"
+      "arity": "Required"
     },
     {
       "tag": "CreateDirective",
@@ -111,21 +111,39 @@
       "model": "User",
       "field": "firstName",
       "type": "String",
-      "arity": "Optional"
+      "arity": "Required"
     },
     {
       "tag": "CreateField",
       "model": "User",
       "field": "lastName",
       "type": "String",
-      "arity": "Required"
+      "arity": "Optional"
     },
     {
       "tag": "CreateField",
       "model": "User",
       "field": "ghToken",
       "type": "String",
-      "arity": "Required"
+      "arity": "Optional"
+    },
+    {
+      "tag": "CreateField",
+      "model": "User",
+      "field": "sponsorWebhookSecret",
+      "type": "String",
+      "arity": "Optional"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "User",
+          "field": "sponsorWebhookSecret"
+        },
+        "directive": "unique"
+      }
     },
     {
       "tag": "CreateDirective",
