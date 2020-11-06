@@ -62,4 +62,13 @@ export default class GHService {
       name: ghResponse.data.name
     }
   }
+
+  async addCollaborator(repo: string, owner: string, username: string) {
+    return await this.octokit?.repos.addCollaborator({
+      owner,
+      repo,
+      username,
+      permission: 'pull'
+    });
+  }
 }
