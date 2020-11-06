@@ -50,7 +50,7 @@ const gh = new GHService({
   clientId: GH_CLIENT_ID,
   clientSecret: GH_CLIENT_SECRET,
   redirectURI: GH_REDIRECT_URI,
-  scope: ['repo']
+  scope: ['repo,read:name'] //read:name to read a user's profile data.
 });
 
 // setup middlewares
@@ -132,6 +132,18 @@ app.get('/user/webhook-secret', authMiddleware, (req, res) => {
   res.json({
     secret: user.sponsorWebhookSecret
   });
+});
+
+app.get('/user/getOverall', authMiddleware, async (req, res) => {
+  const repoOptions = req.query.repoOptions
+
+  try{
+    const userOveralls = await gh.getUserOveralls(repoOptions);
+    res.send({ ...userOveralls });
+  } catch (err) {
+    res.statusCode = 500;
+    res.end();
+  }
 });
 
 app.listen(PORT, () => {
