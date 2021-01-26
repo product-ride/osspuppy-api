@@ -48,25 +48,25 @@ export default function getAuthRoutes({ db, frontendURI, gh }: GetAuthRoutesArgs
       // get user information
       const userInfo = await gh.getUserInfo();
       // save to database
-      let user = await db.user.findOne({
+      const user = await db.user.upsert({
+        create: {
+          name: userInfo.name,
+          username: userInfo.username,
+          avatar: userInfo.avatar,
+          email: userInfo.email,
+          ghToken: ghAccessToken,
+          sponsorWebhookSecret: uuid()
+        },
+        update: {
+          ghToken: ghAccessToken,
+          name: userInfo.name,
+          username: userInfo.username,
+          avatar: userInfo.avatar
+        },
         where: {
           username: userInfo.username
         }
       });
-
-      if (!user) {
-        // create a new user
-        user = await db.user.create({
-          data: {
-            name: userInfo.name,
-            username: userInfo.username,
-            avatar: userInfo.avatar,
-            email: userInfo.email,
-            ghToken: ghAccessToken,
-            sponsorWebhookSecret: uuid()
-          }
-        })
-      }
 
       const token = generateJwtForUser(user);
 

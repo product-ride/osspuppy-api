@@ -15,6 +15,7 @@ type UserInfo = {
   email: string;
   avatar: string;
 }
+
 export default class GHService {
   private options: GHServiceOptions;
   private octokit: Octokit | null;
@@ -37,7 +38,7 @@ export default class GHService {
           client_secret: this.options.clientSecret,
           code,
           redirect_uri: this.options.redirectURI,
-          scope: this.options.scope.join(' ')
+          scope: this.options.scope.join(', ')
         })
       })).json();
 

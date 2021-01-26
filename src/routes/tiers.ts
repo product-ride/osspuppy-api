@@ -84,7 +84,9 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
         });
     
         res.sendStatus(201);
-      } catch {
+      } catch (err) {
+        console.log(err);
+        
         res.sendStatus(500);
       }
     });
@@ -127,7 +129,9 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
         });
 
         res.sendStatus(201);
-      } catch {
+      } catch (err) {
+        console.log(err);
+
         res.sendStatus(500);
       }      
     });
