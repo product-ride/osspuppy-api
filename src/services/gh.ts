@@ -10,9 +10,9 @@ type GHServiceOptions = {
 }
 
 type UserInfo = {
-  name: string;
+  name: string | null;
   username: string;
-  email: string;
+  email: string | null;
   avatar: string;
 }
 

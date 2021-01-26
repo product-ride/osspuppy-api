@@ -50,7 +50,7 @@ export default function getAuthRoutes({ db, frontendURI, gh }: GetAuthRoutesArgs
       // save to database
       const user = await db.user.upsert({
         create: {
-          name: userInfo.name,
+          name: userInfo.name || userInfo.username,
           username: userInfo.username,
           avatar: userInfo.avatar,
           email: userInfo.email,
@@ -59,7 +59,7 @@ export default function getAuthRoutes({ db, frontendURI, gh }: GetAuthRoutesArgs
         },
         update: {
           ghToken: ghAccessToken,
-          name: userInfo.name,
+          name: userInfo.name || userInfo.username,
           username: userInfo.username,
           avatar: userInfo.avatar
         },

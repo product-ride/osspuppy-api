@@ -118,7 +118,7 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
           Tier: true
         }
       });
-      const tier = userInstance?.Tier.find(tier => tier.id === tierId);
+      const tier = userInstance?.Tier.find((tier) => tier.id === tierId);
 
       // delete the tier only if it belongs to the user
       if (tier) {
