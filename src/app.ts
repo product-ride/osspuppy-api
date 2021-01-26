@@ -147,7 +147,6 @@ type SponsorWebHookRequest = {
   }
 }
 
-
 app.post('/webhooks/sponsor', async (req: Request<{}, {}, SponsorWebHookRequest>, res) => {
   const { config, action, tier, sponsor } = req.body;
 
@@ -166,9 +165,7 @@ app.post('/webhooks/sponsor', async (req: Request<{}, {}, SponsorWebHookRequest>
             const repos = await db.repository.findMany({ where: { tierId: eligibleTier.id } });
 
             for (const repo of repos) {
-              const res = await gh.addCollaborator(repo.name, user.name, sponsor.login);
-
-              console.log(res);
+              await gh.addCollaborator(repo.name, user.name, sponsor.login);
 
               console.log(`added ${sponsor.login} as collaborator to repo ${repo.name} of ${user.name}`);
             }
