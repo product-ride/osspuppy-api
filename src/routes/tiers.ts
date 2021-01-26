@@ -74,7 +74,7 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
           data: {
             title,
             description,
-            minAmount,
+            minAmount: parseInt(minAmount),
             user: {
               connect: {
                 id: user.id

@@ -36,6 +36,8 @@ export default function getWebhookRoutes({ gh, db }: GetWebhookRoutesArgs) {
         res.sendStatus(401);
       } else {
         const eligibleTiers = await db.tier.findMany({ where: { minAmount: { lte: tier.monthly_price_in_dollars }}});
+        // update the ghToken in the service
+        if(user.ghToken) gh.updateToken(user.ghToken);
   
         switch (action) {
           case 'created': {
@@ -43,7 +45,7 @@ export default function getWebhookRoutes({ gh, db }: GetWebhookRoutesArgs) {
               const repos = await db.repository.findMany({ where: { tierId: eligibleTier.id } });
   
               for (const repo of repos) {
-                await gh.addCollaborator(repo.name, user.name, sponsor.login);
+                await gh.addCollaborator(repo.name, user.username, sponsor.login);
   
                 console.log(`added ${sponsor.login} as collaborator to repo ${repo.name} of ${user.name}`);
               }
@@ -58,8 +60,8 @@ export default function getWebhookRoutes({ gh, db }: GetWebhookRoutesArgs) {
           }
         }
       }
-    } catch {
-      console.log(`unable to update repo access for user ${sponsor.login}`);
+    } catch(err) {
+      console.log(`unable to update repo access for user ${sponsor.login} ${err}`);
   
       res.sendStatus(500);
     }
