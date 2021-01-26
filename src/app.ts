@@ -50,7 +50,7 @@ const gh = new GHService({
   clientId: GH_CLIENT_ID,
   clientSecret: GH_CLIENT_SECRET,
   redirectURI: GH_REDIRECT_URI,
-  scope: ['repo']
+  scope: ['repo,read:name'] //read:name to read a user's profile data.
 });
 
 // setup middlewares

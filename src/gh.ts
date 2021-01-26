@@ -16,6 +16,14 @@ type UserInfo = {
   avatar: string;
 }
 
+type UserOveralls = {
+  name: string,
+  repositories: object[],
+  sponsorshipRequested: object[],
+  sponsorshipReceived: object[]
+}
+
+
 export default class GHService {
   private options: ghServiceOptions;
   private octokit: Octokit | null;
