@@ -3,3 +3,5 @@
 20201105094834-add-users
 20201106105856
 20201106105917-add-repos-and-tiers
+20210126121205-add-index-to-repo
+20210126121610-add-unique-constraints-to-repos
