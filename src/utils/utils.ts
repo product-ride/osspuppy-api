@@ -2,12 +2,14 @@ import { User } from "@prisma/client";
 import jsonwebtoken from 'jsonwebtoken';
 import { load } from 'ts-dotenv';
 
-export function generateJwtForUser(user: User, jwtSecret: string) {
+export function generateJwtForUser(user: User) {
+  const { JWT_SECRET } = loadConfig();
+
   return jsonwebtoken.sign(
     {
       sub: user.username
     },
-    jwtSecret
+    JWT_SECRET
   );
 };
 

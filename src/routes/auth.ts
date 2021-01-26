@@ -4,18 +4,17 @@ import GHService from '../services/gh';
 import { generateJwtForUser, loadConfig } from '../utils/utils';
 import { v4 as uuid } from 'uuid';
 
-type getAuthRoutesArgs = {
+type GetAuthRoutesArgs = {
   db: PrismaClient,
-  jwtSecret: string,
   frontendURI: string;
   gh: GHService
 }
 
-export default function getAuthRoutes({ db, jwtSecret, frontendURI, gh}: getAuthRoutesArgs) {
+export default function getAuthRoutes({ db, frontendURI, gh}: GetAuthRoutesArgs) {
   const authRoutes = express.Router();
   const { NODE_ENV } = loadConfig();
   const isProd = NODE_ENV === 'production';
-  
+
   // backdoor to generate usertoken in development only
   if (!isProd) {
     authRoutes.get('/token/:username', async (req, res) => {
@@ -28,7 +27,7 @@ export default function getAuthRoutes({ db, jwtSecret, frontendURI, gh}: getAuth
       });
 
       if (user) {
-        const token = generateJwtForUser(user, jwtSecret);
+        const token = generateJwtForUser(user);
 
         res.json({ token });
       } else {
@@ -70,7 +69,7 @@ export default function getAuthRoutes({ db, jwtSecret, frontendURI, gh}: getAuth
         })
       }
 
-      const token = generateJwtForUser(user, jwtSecret);
+      const token = generateJwtForUser(user);
 
       res.redirect(`${frontendURI}?token=${token}`);
     } catch (err) {
