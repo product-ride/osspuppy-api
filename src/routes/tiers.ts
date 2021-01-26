@@ -12,6 +12,10 @@ type AddRepositoryRequest = {
   name: string;
 }
 
+type DeleteRepositoryRequest = {
+  name: string;
+}
+
 type GetTierRoutesArgs = {
   gh: GHService,
   db: PrismaClient
@@ -21,6 +25,16 @@ async function validateCreateTierRequest(req: Request<{}, {}, CreateTierRequest>
   const { title, description, minAmount } = req.body;
 
   if (!title || !description || !minAmount || isNaN(parseInt(minAmount))) {
+    res.sendStatus(400);
+  } else {
+    await cb();
+  }
+}
+
+async function validateDeleteRepositoryRequest(req: Request<{}, {}, DeleteRepositoryRequest>, res: Response, cb: () => void) {
+  const { name } = req.body;
+
+  if (!name) {
     res.sendStatus(400);
   } else {
     await cb();
@@ -87,6 +101,64 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
       } catch (err) {
         console.log(err);
         
+        res.sendStatus(500);
+      }
+    });
+  });
+
+  tierRoutes.delete('/:id', async (req, res) => {
+    const tierId = parseInt(req.params.id);
+
+    try {
+      const user = req.user as User;
+
+      const userInstance = await db.user.findOne({
+        where: { id: user.id },
+        include: {
+          Tier: true
+        }
+      });
+      const tier = userInstance?.Tier.find(tier => tier.id === tierId);
+
+      // delete the tier only if it belongs to the user
+      if (tier) {
+        await db.tier.delete({
+          where: {
+            id: tier.id
+          }
+        });
+
+        res.sendStatus(200);
+      } else {
+        res.sendStatus(404);
+      }
+
+    } catch(err) {
+      console.log(err);
+
+      res.sendStatus(500);
+    }
+  });
+
+  tierRoutes.delete('/:id/repositories', async (req: Request<{ id: string }, {}, DeleteRepositoryRequest>, res) => {
+    await validateDeleteRepositoryRequest(req, res, async () => {
+      const user = req.user as User;
+      const { name } = req.body;
+
+      try {
+        await db.repository.delete({
+          where: {
+            userId_name: {
+              userId: user.id,
+              name
+            }
+          }
+        });
+        
+        res.sendStatus(200);
+      } catch(err) {
+        console.log(err);
+
         res.sendStatus(500);
       }
     });
