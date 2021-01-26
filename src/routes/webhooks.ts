@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import express, { Request } from 'express';
 import GHService from '../services/gh';
+import { SponsorshipCreatedJob } from '../types';
+import { getSponsorshipCreatedQueue } from '../utils/utils';
 
 type SponsorWebHookRequest = {
   config: {
@@ -22,6 +24,8 @@ type GetWebhookRoutesArgs = {
   gh: GHService
 }
 
+const queue = getSponsorshipCreatedQueue();
+
 export default function getWebhookRoutes({ gh, db }: GetWebhookRoutesArgs) {
   const webhookRoutes = express.Router();
 
@@ -35,21 +39,16 @@ export default function getWebhookRoutes({ gh, db }: GetWebhookRoutesArgs) {
         // someone is fucking with us
         res.sendStatus(401);
       } else {
-        const eligibleTiers = await db.tier.findMany({ where: { minAmount: { lte: parseInt(tier.monthly_price_in_dollars) }}});
-        // update the ghToken in the service
-        if(user.ghToken) gh.updateToken(user.ghToken);
-  
         switch (action) {
           case 'created': {
-            for (const eligibleTier of eligibleTiers) {
-              const repos = await db.repository.findMany({ where: { tierId: eligibleTier.id } });
-  
-              for (const repo of repos) {
-                await gh.addCollaborator(repo.name, user.username, sponsor.login);
-  
-                console.log(`added ${sponsor.login} as collaborator to repo ${repo.name} of ${user.name}`);
-              }
-            }
+            // add the new job to the queue
+            const job = queue.createJob<SponsorshipCreatedJob>({
+              ownerId: user.id,
+              sponsor: sponsor.login,
+              amount: parseInt(tier.monthly_price_in_dollars)
+            });
+
+            job.save();
   
             res.sendStatus(200);
   

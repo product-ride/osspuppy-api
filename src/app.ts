@@ -12,19 +12,11 @@ import getAuthMiddleware from './middlewares/auth';
 const {
   NODE_ENV,
   PORT,
-  GH_CLIENT_ID,
-  GH_CLIENT_SECRET,
-  GH_REDIRECT_URI,
   FRONTEND_URI
 } = loadConfig();
 const app = express();
 const isProd = NODE_ENV === 'production';
-const gh = new GHService({
-  clientId: GH_CLIENT_ID,
-  clientSecret: GH_CLIENT_SECRET,
-  redirectURI: GH_REDIRECT_URI,
-  scope: ['repo', 'read:name'] //read:name to read a user's profile data.
-});
+const gh = new GHService();
 
 // setup middlewares
 app.use(morgan(isProd? 'short': 'dev'));

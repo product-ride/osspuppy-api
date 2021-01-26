@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 import { Octokit } from '@octokit/rest';
+import { loadConfig } from '../utils/utils';
 
 type GHServiceOptions = {
   clientId: string;
@@ -20,8 +21,19 @@ export default class GHService {
   private options: GHServiceOptions;
   private octokit: Octokit | null;
 
-  constructor(options: GHServiceOptions) {
-    this.options = options;
+  constructor() {
+    const {
+      GH_CLIENT_ID,
+      GH_CLIENT_SECRET,
+      GH_REDIRECT_URI,
+    } = loadConfig();
+    
+    this.options = {
+      clientId: GH_CLIENT_ID,
+      clientSecret: GH_CLIENT_SECRET,
+      redirectURI: GH_REDIRECT_URI,
+      scope: ['repo', 'read:name'] //read:name to read a user's profile data.
+    };
     this.octokit = null;
   }
 
@@ -73,6 +85,15 @@ export default class GHService {
 
   async addCollaborator(repo: string, owner: string, username: string) {
     return await this.octokit?.repos.addCollaborator({
+      owner,
+      repo,
+      username,
+      permission: 'pull'
+    });
+  }
+
+  async removeCollaborator(repo: string, owner: string, username: string) {
+    return await this.octokit?.repos.removeCollaborator({
       owner,
       repo,
       username,
