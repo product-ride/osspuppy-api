@@ -42,9 +42,7 @@ export function loadConfig() {
 
 export function getSponsorshipCreatedQueue() {
   const queue = new Queue('sponsors', {
-    redis: {
-      host: process.env.REDIS_URL || 'localhost'
-    }
+    redis: process.env.REDIS_URL || 'redis://localhost:6379'
   });
 
   return queue;
