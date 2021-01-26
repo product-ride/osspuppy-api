@@ -16,6 +16,14 @@ type UserInfo = {
   avatar: string;
 }
 
+type UserOveralls = {
+  name: string,
+  repositories: object[],
+  sponsorshipRequested: object[],
+  sponsorshipReceived: object[]
+}
+
+
 export default class GHService {
   private options: ghServiceOptions;
   private octokit: Octokit | null;
@@ -61,5 +69,14 @@ export default class GHService {
       username: ghResponse.data.login,
       name: ghResponse.data.name
     }
+  }
+
+  async addCollaborator(repo: string, owner: string, username: string) {
+    return await this.octokit?.repos.addCollaborator({
+      owner,
+      repo,
+      username,
+      permission: 'pull'
+    });
   }
 }
