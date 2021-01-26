@@ -10,7 +10,7 @@ type GetAuthRoutesArgs = {
   gh: GHService
 }
 
-export default function getAuthRoutes({ db, frontendURI, gh}: GetAuthRoutesArgs) {
+export default function getAuthRoutes({ db, frontendURI, gh }: GetAuthRoutesArgs) {
   const authRoutes = express.Router();
   const { NODE_ENV } = loadConfig();
   const isProd = NODE_ENV === 'production';
@@ -40,8 +40,7 @@ export default function getAuthRoutes({ db, frontendURI, gh}: GetAuthRoutesArgs)
     const code = req.query.code as string;
 
     if (!code || Array.isArray(code)) {
-      res.statusCode = 403;
-      res.send();
+      res.sendStatus(403);
     }
 
     try {

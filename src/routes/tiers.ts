@@ -1,5 +1,6 @@
 import { PrismaClient, User } from '@prisma/client';
 import express, { Request, Response } from 'express';
+import GHService from '../services/gh';
 
 type CreateTierRequest = {
   title: string;
@@ -11,6 +12,11 @@ type AddRepositoryRequest = {
   name: string;
 }
 
+type GetTierRoutesArgs = {
+  gh: GHService,
+  db: PrismaClient
+};
+
 async function validateCreateTierRequest(req: Request<{}, {}, CreateTierRequest>, res: Response, cb: () => void) {
   const { title, description, minAmount } = req.body;
 
@@ -21,8 +27,21 @@ async function validateCreateTierRequest(req: Request<{}, {}, CreateTierRequest>
   }
 }
 
-async function validateAddRepositoryRequest(req: Request<{}, {}, AddRepositoryRequest>, res: Response, cb: () => void) {
+async function validateAddRepositoryRequest(req: Request<{}, {}, AddRepositoryRequest>, res: Response, gh: GHService, cb: () => void) {
   const { name } = req.body;
+  const user = req.user as User;
+  const repoExists = await gh.repoExists(user.username, name);
+
+  // if repo deos not exists do not entertain
+  if (!repoExists) {
+    res.statusCode = 400;
+
+    res.json({
+      validationErrors: ['REPO_NOT_FOUND']
+    });
+
+    return;
+  }
 
   if (!name) {
     res.sendStatus(400);
@@ -31,7 +50,7 @@ async function validateAddRepositoryRequest(req: Request<{}, {}, AddRepositoryRe
   }
 }
 
-export default function getTierRoutes(db: PrismaClient) {
+export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
   const tierRoutes = express.Router();
 
   tierRoutes.get('/', async (req, res) => {
@@ -72,7 +91,7 @@ export default function getTierRoutes(db: PrismaClient) {
   });
 
   tierRoutes.post('/:id/repositories', async (req: Request<{ id: string }, {}, AddRepositoryRequest>, res) => {
-    await validateAddRepositoryRequest(req, res, async () => {
+    await validateAddRepositoryRequest(req, res, gh, async () => {
       try {
         const user = req.user as User;
         const tierId = req.params.id;

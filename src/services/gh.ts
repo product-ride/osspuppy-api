@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 import { Octokit } from '@octokit/rest';
 
-type ghServiceOptions = {
+type GHServiceOptions = {
   clientId: string;
   clientSecret: string;
   redirectURI: string;
@@ -15,20 +15,11 @@ type UserInfo = {
   email: string;
   avatar: string;
 }
-
-type UserOveralls = {
-  name: string,
-  repositories: object[],
-  sponsorshipRequested: object[],
-  sponsorshipReceived: object[]
-}
-
-
 export default class GHService {
-  private options: ghServiceOptions;
+  private options: GHServiceOptions;
   private octokit: Octokit | null;
 
-  constructor(options: ghServiceOptions) {
+  constructor(options: GHServiceOptions) {
     this.options = options;
     this.octokit = null;
   }
@@ -56,6 +47,14 @@ export default class GHService {
     return this.options.token;
   }
 
+  async updateToken(token: string) {
+    if (!this.octokit) {
+      this.options.token = token;
+
+      this.octokit = new Octokit({ auth: this.options.token });
+    }
+  }
+
   async getUserInfo(): Promise<UserInfo> {
     const ghResponse = await this.octokit?.users.getAuthenticated();
 
@@ -78,5 +77,15 @@ export default class GHService {
       username,
       permission: 'pull'
     });
+  }
+
+  async repoExists(user: string, repo: string) {
+    try {
+      await this.octokit?.repos.get({ repo, owner: user });
+
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

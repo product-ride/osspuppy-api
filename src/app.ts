@@ -39,10 +39,10 @@ app.use(getAuthRoutes({
 
 // setup routes that need auth protection
 const protectedRoutes = express.Router();
-const authMiddleware = getAuthMiddleware(db);
+const authMiddleware = getAuthMiddleware({ db, gh });
 
 app.use('/api', authMiddleware, protectedRoutes);
-protectedRoutes.use('/tiers', getTierRoutes(db));
+protectedRoutes.use('/tiers', getTierRoutes({ db, gh }));
 
 app.listen(PORT, () => {
   if (isProd) {
