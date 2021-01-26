@@ -71,77 +71,12 @@ export default class GHService {
     }
   }
 
-  
-  /*
-  * get repo, sponshirship list, sponsorship received
-  * TO-DO: pagination for repos
-  * TO-DO: allow user to select fields for repositories
-  */
-  async getUserOveralls(repoOptions?: Object): Promise<UserOveralls> {
-    // const { ...repo } = repoOptions //wip
-    console.log('getting user details')
-    const ghResponse: any = await this.octokit?.graphql(
-      `query { 
-        viewer {
-          login,
-          repositories(first: 30){
-            totalCount,
-            nodes {
-              id,
-              name,
-              description,
-              isPrivate,
-              stargazerCount
-            }
-          }
-          sponsorshipsAsMaintainer(first: 10) {
-            nodes {
-              tier {
-                name
-                description
-                id
-                # adminInfo
-                sponsorsListing {
-                  id
-                  name
-                  slug
-                  shortDescription
-                  fullDescription
-                }
-                descriptionHTML
-              }
-            }
-          }
-          sponsorsListing{
-            name,
-            tiers(first: 25){
-                  nodes{
-                    name
-                    # adminInfo
-                    createdAt
-                    description
-                    descriptionHTML
-                    monthlyPriceInDollars
-                    sponsorsListing {
-                      id
-                    }
-                    id
-                  }
-            }
-      }
-    }
-  }`);
-
-  
-    if (!ghResponse?.data) {
-      throw "Unable to fetch repo and sponsorship information from github";
-    }
-    const { repositories, sponsorshipListing, sponsorshipsAsMaintainer } = ghResponse.data.viewer;
-    return {
-     name,
-     repositories,
-     sponsorshipRequested: sponsorshipListing,
-     sponsorshipReceived: sponsorshipsAsMaintainer
-    }
+  async addCollaborator(repo: string, owner: string, username: string) {
+    return await this.octokit?.repos.addCollaborator({
+      owner,
+      repo,
+      username,
+      permission: 'pull'
+    });
   }
 }

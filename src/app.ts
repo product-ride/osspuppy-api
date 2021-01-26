@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request } from 'express';
 import morgan from 'morgan';
 import { load } from 'ts-dotenv';
 import db from './db';
@@ -88,8 +88,7 @@ app.get('/auth/github', async (req, res) => {
   const code = req.query.code as string;
 
   if (!code || Array.isArray(code)) {
-    res.statusCode = 403;
-    res.send();
+    res.sendStatus(403);
   }
 
   try {
@@ -121,8 +120,7 @@ app.get('/auth/github', async (req, res) => {
 
     res.redirect(`${FRONTEND_URI}?token=${token}`);
   } catch (err) {
-    res.statusCode = 500;
-    res.end();
+    res.sendStatus(500);
   }
 });
 
@@ -134,15 +132,58 @@ app.get('/user/webhook-secret', authMiddleware, (req, res) => {
   });
 });
 
-app.get('/user/getOverall', authMiddleware, async (req, res) => {
-  const repoOptions = req.query.repoOptions
+type SponsorWebHookRequest = {
+  config: {
+    secret: string
+  },
+  action: 'created' | 'cancelled' | 'edited' | 'tier_changed' | 'pending_cancellation' | 'pending_cancellation',
+  effective_date: string,
+  privacy_level: 'public' | 'private',
+  tier: {
+    monthly_price_in_dollars: string
+  },
+  sponsor: {
+    login: string
+  }
+}
 
-  try{
-    const userOveralls = await gh.getUserOveralls(repoOptions);
-    res.send({ ...userOveralls });
-  } catch (err) {
-    res.statusCode = 500;
-    res.end();
+app.post('/webhooks/sponsor', async (req: Request<{}, {}, SponsorWebHookRequest>, res) => {
+  const { config, action, tier, sponsor } = req.body;
+
+  try {
+    const user = await db.user.findOne({ where: { sponsorWebhookSecret: config.secret } });
+
+    if (!user) {
+      // someone is fucking with us
+      res.sendStatus(401);
+    } else {
+      const eligibleTiers = await db.tier.findMany({ where: { minAmount: { lte: tier.monthly_price_in_dollars }}});
+
+      switch (action) {
+        case 'created': {
+          for (const eligibleTier of eligibleTiers) {
+            const repos = await db.repository.findMany({ where: { tierId: eligibleTier.id } });
+
+            for (const repo of repos) {
+              await gh.addCollaborator(repo.name, user.name, sponsor.login);
+
+              console.log(`added ${sponsor.login} as collaborator to repo ${repo.name} of ${user.name}`);
+            }
+          }
+
+          res.sendStatus(200);
+
+          break;
+        }
+        default: {
+          console.log('sponshorship webhook handling not yet implemented');
+        }
+      }
+    }
+  } catch {
+    console.log(`unable to update repo access for user ${sponsor.login}`);
+
+    res.sendStatus(500);
   }
 });
 
