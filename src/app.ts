@@ -1,13 +1,12 @@
 import express from 'express';
 import morgan from 'morgan';
-import { load } from 'ts-dotenv';
-import db from './db';
-import GHService from './gh';
-import { v4 as uuid } from 'uuid';
+import db from './db/db';
+import GHService from './services/gh';
 import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
-import jsonwebtoken from 'jsonwebtoken';
-import { User } from '@prisma/client';
+import getTierRoutes from './routes/tiers';
+import getAuthRoutes from './routes/auth';
+import { loadConfig } from './utils/utils';
 
 // load configurations from .env file or environmental variables
 const {
@@ -18,34 +17,9 @@ const {
   GH_CLIENT_SECRET,
   GH_REDIRECT_URI,
   FRONTEND_URI
-} = load({
-  PORT: {
-    type: Number,
-    default: 8000
-  },
-  NODE_ENV: {
-    type: [
-      'production' as const,
-      'development' as const,
-    ],
-    default: 'development'
-  },
-  GH_CLIENT_ID: String,
-  GH_CLIENT_SECRET: String,
-  GH_REDIRECT_URI: String,
-  FRONTEND_URI: String,
-  JWT_SECRET: String
-});
+} = loadConfig();
 const app = express();
 const isProd = NODE_ENV === 'production';
-const generateJwtForUser = (user: User) => {
-  return jsonwebtoken.sign(
-    {
-      sub: user.username
-    },
-    JWT_SECRET
-  );
-};
 const gh = new GHService({
   clientId: GH_CLIENT_ID,
   clientSecret: GH_CLIENT_SECRET,
@@ -84,55 +58,18 @@ const authMiddleware = passport.authenticate('jwt', {
   session: false,
 });
 
-app.get('/auth/github', async (req, res) => {
-  const code = req.query.code as string;
+app.use(getAuthRoutes({
+  db,
+  frontendURI: FRONTEND_URI,
+  jwtSecret: JWT_SECRET,
+  gh
+}));
 
-  if (!code || Array.isArray(code)) {
-    res.statusCode = 403;
-    res.send();
-  }
+// setup routes that need auth protection
+const protectedRoutes = express.Router();
 
-  try {
-    const ghAccessToken = await gh.auth(code);
-    // get user information
-    const userInfo = await gh.getUserInfo();
-    // save to database
-    let user = await db.user.findOne({
-      where: {
-        username: userInfo.username
-      }
-    });
-
-    if (!user) {
-      // create a new user
-      user = await db.user.create({
-        data: {
-          name: userInfo.name,
-          username: userInfo.username,
-          avatar: userInfo.avatar,
-          email: userInfo.email,
-          ghToken: ghAccessToken,
-          sponsorWebhookSecret: uuid()
-        }
-      })
-    }
-
-    const token = generateJwtForUser(user);
-
-    res.redirect(`${FRONTEND_URI}?token=${token}`);
-  } catch (err) {
-    res.statusCode = 500;
-    res.end();
-  }
-});
-
-app.get('/user/webhook-secret', authMiddleware, (req, res) => {
-  const user = req.user as User;
-
-  res.json({
-    secret: user.sponsorWebhookSecret
-  });
-});
+app.use('/api', authMiddleware, protectedRoutes);
+protectedRoutes.use('/tiers', getTierRoutes(db));
 
 app.listen(PORT, () => {
   if (isProd) {
