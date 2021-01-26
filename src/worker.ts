@@ -2,10 +2,21 @@ import { DoneCallback, Job } from 'bee-queue';
 import db from './db/db';
 import GHService from './services/gh';
 import { SponsorshipCreatedJob } from './types';
-import { getSponsorshipCreatedQueue, updateRepoAccessForUser } from './utils/utils';
+import { getSponsorshipCreatedQueue, loadConfig, updateRepoAccessForUser } from './utils/utils';
+import { CronJob } from 'cron';
 
 const sponsorshipCreatedQueue = getSponsorshipCreatedQueue();
 const gh = new GHService();
+const { NODE_ENV } = loadConfig();
+const isProd = NODE_ENV === 'production';
+// in production check everyday at 12:00 AM and in dev check every 5 seconds
+const pendingSponsorJobCron = isProd? '0 0 * * * *': '*/5 * * * * *';
+const pendingSponsorJob = new CronJob(pendingSponsorJobCron, () => {
+  // add jobs to update the pending sponsors
+});
+
+// run the cron task
+pendingSponsorJob.start();
 
 sponsorshipCreatedQueue.process(async (job: Job<SponsorshipCreatedJob>, done: DoneCallback<any>) => {
   const { amount, ownerId, sponsor } = job.data;
@@ -41,4 +52,8 @@ sponsorshipCreatedQueue.process(async (job: Job<SponsorshipCreatedJob>, done: Do
   }
 });
 
-console.log('Worker is ready and waiting for jobs...');
+if (isProd) {
+  console.log(`🚀 Worker is running in production mode and waiting for jobs...`);
+} else {
+  console.log(`🔨 Worker is running in development mode and waiting for jobs...`);
+}
