@@ -35,7 +35,7 @@ export default function getWebhookRoutes({ gh, db }: GetWebhookRoutesArgs) {
         // someone is fucking with us
         res.sendStatus(401);
       } else {
-        const eligibleTiers = await db.tier.findMany({ where: { minAmount: { lte: tier.monthly_price_in_dollars }}});
+        const eligibleTiers = await db.tier.findMany({ where: { minAmount: { lte: parseInt(tier.monthly_price_in_dollars) }}});
         // update the ghToken in the service
         if(user.ghToken) gh.updateToken(user.ghToken);
   
