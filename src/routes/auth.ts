@@ -72,6 +72,8 @@ export default function getAuthRoutes({ db, frontendURI, gh }: GetAuthRoutesArgs
 
       res.redirect(`${frontendURI}?token=${token}`);
     } catch (err) {
+      console.log(err);
+      
       res.sendStatus(500);
     }
   });
