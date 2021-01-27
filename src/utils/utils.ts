@@ -32,6 +32,10 @@ export function loadConfig() {
       ],
       default: 'development'
     },
+    CORS_ORIGINS: {
+      type: String,
+      default: 'http://localhost:3000'
+    },
     GH_CLIENT_ID: String,
     GH_CLIENT_SECRET: String,
     GH_REDIRECT_URI: String,
