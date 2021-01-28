@@ -34,9 +34,9 @@ sponsorshipCreatedQueue.process(async (job: Job<SponsorshipCreatedJob>, done: Do
 
         await updateRepoAccessForUser({
           gh,
-          owner: user.username,
           sponsor,
-          amount
+          amount,
+          owner: user
         });
 
         done(null);
