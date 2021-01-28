@@ -10,10 +10,12 @@ type CreateTierRequest = {
 
 type AddRepositoryRequest = {
   name: string;
+  ownerOrOrg: string;
 }
 
 type DeleteRepositoryRequest = {
   name: string;
+  ownerOrOrg: string;
 }
 
 type GetTierRoutesArgs = {
@@ -32,9 +34,9 @@ async function validateCreateTierRequest(req: Request<{}, {}, CreateTierRequest>
 }
 
 async function validateDeleteRepositoryRequest(req: Request<{}, {}, DeleteRepositoryRequest>, res: Response, cb: () => void) {
-  const { name } = req.body;
+  const { name, ownerOrOrg } = req.body;
 
-  if (!name) {
+  if (!name || !ownerOrOrg) {
     res.sendStatus(400);
   } else {
     await cb();
@@ -42,13 +44,18 @@ async function validateDeleteRepositoryRequest(req: Request<{}, {}, DeleteReposi
 }
 
 async function validateAddRepositoryRequest(req: Request<{}, {}, AddRepositoryRequest>, res: Response, gh: GHService, cb: () => void) {
-  const { name } = req.body;
-  const user = req.user as User;
-  const repoExists = await gh.repoExists(user.username, name);
+  const { name, ownerOrOrg } = req.body;
+  const repoExists = await gh.repoExists(ownerOrOrg, name);
+
+  if (!name || !ownerOrOrg) {
+    res.sendStatus(400);
+
+    return;
+  }
 
   // if repo deos not exists do not entertain
   if (!repoExists) {
-    res.statusCode = 400;
+    res.statusCode = 404;
 
     res.json({
       validationErrors: ['REPO_NOT_FOUND']
@@ -57,11 +64,7 @@ async function validateAddRepositoryRequest(req: Request<{}, {}, AddRepositoryRe
     return;
   }
 
-  if (!name) {
-    res.sendStatus(400);
-  } else {
-    await cb();
-  }
+  await cb();
 }
 
 export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
@@ -143,14 +146,15 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
   tierRoutes.delete('/:id/repositories', async (req: Request<{ id: string }, {}, DeleteRepositoryRequest>, res) => {
     await validateDeleteRepositoryRequest(req, res, async () => {
       const user = req.user as User;
-      const { name } = req.body;
+      const { name, ownerOrOrg } = req.body;
 
       try {
         await db.repository.delete({
           where: {
-            userId_name: {
+            userId_name_ownerOrOrg: {
               userId: user.id,
-              name
+              name,
+              ownerOrOrg: ownerOrOrg
             }
           }
         });
@@ -169,11 +173,12 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
       try {
         const user = req.user as User;
         const tierId = req.params.id;
-        const { name } = req.body;
+        const { name, ownerOrOrg } = req.body;
 
         await db.repository.upsert({
           create: {
             name,
+            ownerOrOrg,
             user: {
               connect: {
                 id: user.id
@@ -193,9 +198,10 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
             }
           },
           where: {
-            userId_name: {
+            userId_name_ownerOrOrg: {
               name,
-              userId: user.id
+              userId: user.id,
+              ownerOrOrg
             }
           }
         });

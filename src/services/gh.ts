@@ -101,9 +101,9 @@ export default class GHService {
     });
   }
 
-  async repoExists(user: string, repo: string) {
+  async repoExists(owner: string, repo: string) {
     try {
-      await this.octokit?.repos.get({ repo, owner: user });
+      await this.octokit?.repos.get({ repo, owner: owner });
 
       return true;
     } catch {
