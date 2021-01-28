@@ -11,6 +11,7 @@ type CreateTierRequest = {
 type AddRepositoryRequest = {
   name: string;
   ownerOrOrg: string;
+  description: string;
 }
 
 type DeleteRepositoryRequest = {
@@ -173,12 +174,13 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
       try {
         const user = req.user as User;
         const tierId = req.params.id;
-        const { name, ownerOrOrg } = req.body;
+        const { name, ownerOrOrg, description } = req.body;
 
         await db.repository.upsert({
           create: {
             name,
             ownerOrOrg,
+            description,
             user: {
               connect: {
                 id: user.id
