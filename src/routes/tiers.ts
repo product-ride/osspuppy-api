@@ -1,4 +1,4 @@
-import { PrismaClient, User } from '@prisma/client';
+import { PrismaClient, Tier, User } from '@prisma/client';
 import express, { Request, Response } from 'express';
 import GHService from '../services/gh';
 
@@ -28,7 +28,8 @@ async function validateCreateTierRequest(req: Request<{}, {}, CreateTierRequest>
   const { title, description, minAmount } = req.body;
 
   if (!title || !description || !minAmount || isNaN(parseInt(minAmount))) {
-    res.sendStatus(400);
+    res.statusCode = 400;
+    res.json({});
   } else {
     await cb();
   }
@@ -38,7 +39,8 @@ async function validateDeleteRepositoryRequest(req: Request<{}, {}, DeleteReposi
   const { name, ownerOrOrg } = req.body;
 
   if (!name || !ownerOrOrg) {
-    res.sendStatus(400);
+    res.statusCode = 400;
+    res.json({});
   } else {
     await cb();
   }
@@ -49,7 +51,8 @@ async function validateAddRepositoryRequest(req: Request<{}, {}, AddRepositoryRe
   const repoExists = await gh.repoExists(ownerOrOrg, name);
 
   if (!name || !ownerOrOrg) {
-    res.sendStatus(400);
+    res.statusCode = 400;
+    res.json({});
 
     return;
   }
@@ -77,8 +80,11 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
       const tiers = await db.tier.findMany({ where: { user }, include: { repositories: true } });
     
       res.json({ tiers });
-    } catch {
-      res.sendStatus(500);
+    } catch(err) {
+      console.log(err);
+
+      res.statusCode = 500;
+      res.json({});
     }
   });
   
@@ -88,7 +94,7 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
       const user = req.user as User;
   
       try {
-        await db.tier.create({
+        const tier = await db.tier.create({
           data: {
             title,
             description,
@@ -101,11 +107,13 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
           }
         });
     
-        res.sendStatus(201);
+        res.statusCode = (201);
+        res.json(tier);
       } catch (err) {
         console.log(err);
         
-        res.sendStatus(500);
+        res.statusCode = 500;
+        res.json({});
       }
     });
   });
@@ -132,15 +140,18 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
           }
         });
 
-        res.sendStatus(200);
+        res.statusCode = 200;
+        res.json({});
       } else {
-        res.sendStatus(404);
+        res.statusCode = 404;
+        res.json({});
       }
 
     } catch(err) {
       console.log(err);
 
-      res.sendStatus(500);
+      res.statusCode = 500;
+      res.json({});
     }
   });
 
@@ -160,11 +171,13 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
           }
         });
         
-        res.sendStatus(200);
+        res.statusCode = 200;
+        res.json({});
       } catch(err) {
         console.log(err);
 
-        res.sendStatus(500);
+        res.statusCode = 500;
+        res.json({});
       }
     });
   });
@@ -176,39 +189,40 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
         const tierId = req.params.id;
         const { name, ownerOrOrg, description } = req.body;
 
-        await db.repository.upsert({
-          create: {
-            name,
-            ownerOrOrg,
-            description,
-            user: {
-              connect: {
-                id: user.id
-              }
-            },
-            tier: {
-              connect: {
-                id: parseInt(tierId)
-              }
-            }
-          },
-          update: {
-            tier: {
-              connect: {
-                id: parseInt(tierId)
-              }
-            }
-          },
-          where: {
-            userId_name_ownerOrOrg: {
-              name,
-              userId: user.id,
-              ownerOrOrg
-            }
-          }
-        });
+        const repo = await db.repository.upsert({
+                      create: {
+                        name,
+                        ownerOrOrg,
+                        description,
+                        user: {
+                          connect: {
+                            id: user.id
+                          }
+                        },
+                        tier: {
+                          connect: {
+                            id: parseInt(tierId)
+                          }
+                        }
+                      },
+                      update: {
+                        tier: {
+                          connect: {
+                            id: parseInt(tierId)
+                          }
+                        }
+                      },
+                      where: {
+                        userId_name_ownerOrOrg: {
+                          name,
+                          userId: user.id,
+                          ownerOrOrg
+                        }
+                      }
+                    });
 
-        res.sendStatus(201);
+        res.statusCode = 200;
+        res.json(repo);
       } catch (err) {
         console.log(err);
 
