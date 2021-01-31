@@ -9,7 +9,7 @@ export default function getCorsMiddleware() {
   // setup cors for protected routes
   const corsMiddleware = cors({
     allowedHeaders: '*',
-    methods: ['POST', 'DELETE', 'GET'],
+    methods: ['POST', 'DELETE', 'GET', 'PUT', 'PATCH'],
     origin: isProd? (origin, callback) => {
       if (origin && corsDomains.includes(origin)) {
         callback(null, true);

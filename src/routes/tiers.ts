@@ -2,13 +2,13 @@ import { PrismaClient, Tier, User } from '@prisma/client';
 import express, { Request, Response } from 'express';
 import GHService from '../services/gh';
 
-type CreateTierRequest = {
+type TierRequest = {
   title: string;
   description: string;
   minAmount: string;
 };
 
-type AddRepositoryRequest = {
+type RepositoryRequest = {
   name: string;
   ownerOrOrg: string;
   description: string;
@@ -24,7 +24,7 @@ type GetTierRoutesArgs = {
   db: PrismaClient
 };
 
-async function validateCreateTierRequest(req: Request<{}, {}, CreateTierRequest>, res: Response, cb: () => void) {
+async function validateTierRequest(req: Request<{}, {}, TierRequest>, res: Response, cb: () => void) {
   const { title, description, minAmount } = req.body;
 
   if (!title || !description || !minAmount || isNaN(parseInt(minAmount))) {
@@ -46,7 +46,7 @@ async function validateDeleteRepositoryRequest(req: Request<{}, {}, DeleteReposi
   }
 }
 
-async function validateAddRepositoryRequest(req: Request<{}, {}, AddRepositoryRequest>, res: Response, gh: GHService, cb: () => void) {
+async function validateRepositoryRequest(req: Request<{}, {}, RepositoryRequest>, res: Response, gh: GHService, cb: () => void) {
   const { name, ownerOrOrg } = req.body;
   const repoExists = await gh.repoExists(ownerOrOrg, name);
 
@@ -88,8 +88,8 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
     }
   });
   
-  tierRoutes.post('/', async (req: Request<{}, {}, CreateTierRequest>, res) => {
-    await validateCreateTierRequest(req, res, async () => {
+  tierRoutes.post('/', async (req: Request<{}, {}, TierRequest>, res) => {
+    await validateTierRequest(req, res, async () => {
       const { title, description, minAmount } = req.body;
       const user = req.user as User;
   
@@ -182,8 +182,46 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
     });
   });
 
-  tierRoutes.post('/:id/repositories', async (req: Request<{ id: string }, {}, AddRepositoryRequest>, res) => {
-    await validateAddRepositoryRequest(req, res, gh, async () => {
+  tierRoutes.put('/:id', async (req: Request<{id: string}, {}, TierRequest>, res) => {
+    const tierId = req.params.id;
+
+    await validateTierRequest(req, res, async () => {
+      const { title, description, minAmount } = req.body;
+      const user = req.user as User;
+  
+      try {
+        const userInstance = await db.user.findOne({ where: { id: user.id }, include: { Tier: true } });
+        const userTier = userInstance && userInstance.Tier.find(tier => tier.id === parseInt(tierId));
+        
+        if (userTier) {
+          const tier = await db.tier.update({
+            data: {
+              title,
+              description,
+              minAmount: parseInt(minAmount)
+            },
+            where: {
+              id: userTier.id
+            }
+          });
+
+          res.statusCode = 201;
+          res.json(tier);
+        } else {
+          res.statusCode = 404;
+          res.json({});
+        }
+      } catch (err) {
+        console.log(err);
+        
+        res.statusCode = 500;
+        res.json({});
+      }
+    });
+  });
+
+  tierRoutes.post('/:id/repositories', async (req: Request<{ id: string }, {}, RepositoryRequest>, res) => {
+    await validateRepositoryRequest(req, res, gh, async () => {
       try {
         const user = req.user as User;
         const tierId = req.params.id;
