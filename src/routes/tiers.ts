@@ -268,6 +268,35 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
       }      
     });
   });
+
+  tierRoutes.patch('/:id/repositories', async (req: Request<{ id: string }, {}, RepositoryRequest>, res) => {
+    await validateRepositoryRequest(req, res, gh, async () => {
+      try {
+        const user = req.user as User;
+        const { name, ownerOrOrg, description } = req.body;
+
+        const repo = await db.repository.update({
+                      data: {
+                        description
+                      },
+                      where: {
+                        userId_name_ownerOrOrg: {
+                          name,
+                          userId: user.id,
+                          ownerOrOrg
+                        }
+                      }
+                    });
+
+        res.statusCode = 200;
+        res.json(repo);
+      } catch (err) {
+        console.log(err);
+
+        res.sendStatus(500);
+      }      
+    });
+  });
   
   return tierRoutes;
 }
