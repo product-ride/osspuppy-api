@@ -4,6 +4,7 @@ import { load } from 'ts-dotenv';
 import Queue from 'bee-queue';
 import db from "../db/db";
 import GHService from "../services/gh";
+import { TierUpdateJob } from "../types";
 
 export function generateJwtForUser(user: User) {
   const { JWT_SECRET } = loadConfig();
@@ -44,8 +45,16 @@ export function loadConfig() {
   });
 }
 
-export function getSponsorshipCreatedQueue() {
+export function getSponsorshipQueue() {
   const queue = new Queue('sponsors', {
+    redis: process.env.REDIS_URL || 'redis://localhost:6379'
+  });
+
+  return queue;
+}
+
+export function getTierUpdateQueue() {
+  const queue = new Queue('tier-update', {
     redis: process.env.REDIS_URL || 'redis://localhost:6379'
   });
 
@@ -57,6 +66,12 @@ type UpdateRepoAccessForUserArgs = {
   owner: User,
   sponsor: string,
   amount: number
+}
+
+export async function addTierUpdateJob(user: User) {
+  const tierUpdateQueue = getTierUpdateQueue();
+
+  await tierUpdateQueue.createJob<TierUpdateJob>({ userId: user.id }).save();
 }
 
 export async function updateRepoAccessForUser({

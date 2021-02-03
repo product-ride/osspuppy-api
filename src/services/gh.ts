@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import { Octokit } from '@octokit/rest';
 import { loadConfig } from '../utils/utils';
+import { GHSponsorResponse, Sponsor } from '../types';
 
 type GHServiceOptions = {
   clientId: string;
@@ -33,7 +34,7 @@ export default class GHService {
       clientId: GH_CLIENT_ID,
       clientSecret: GH_CLIENT_SECRET,
       redirectURI: GH_REDIRECT_URI,
-      scope: ['repo', 'read:name'] //read:name to read a user's profile data.
+      scope: ['repo', 'read:user'] //read:name to read a user's profile data.
     };
     this.octokit = this.options.token? new Octokit({ auth: token }): null;
   }
@@ -110,5 +111,54 @@ export default class GHService {
     } catch {
       return false;
     }
+  }
+
+  async getSponsors(nextCurosor?: string) {
+    const afterFilter = nextCurosor? `, after: "${nextCurosor}"`: '';
+    const ghResponse: GHSponsorResponse | undefined = await this.octokit?.graphql(
+      `query {
+        viewer {
+          sponsorshipsAsMaintainer(first: 50, includePrivate: true ${afterFilter}) {
+            totalCount
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+            nodes {
+              sponsorEntity {
+                ...on User {
+                  login
+                }
+              }  
+              tier {
+                monthlyPriceInDollars
+              }
+            }
+          }
+        }
+      }`);
+
+    return ghResponse;
+  }
+
+  async getAllSponsors() {
+    const sponsors: Sponsor[] = [];
+    let nextCursor;
+    do {
+      const ghResponse: GHSponsorResponse | undefined = await this.getSponsors(nextCursor);
+
+      if (ghResponse) {
+        nextCursor = ghResponse.viewer.sponsorshipsAsMaintainer.pageInfo.endCursor;
+      
+      for (const sponsor of ghResponse.viewer.sponsorshipsAsMaintainer.nodes) {
+        sponsors.push({
+          minAmount: sponsor.tier?.monthlyPriceInDollars,
+          sponsor: sponsor.sponsorEntity?.login
+        });
+      }
+      }
+    } while(nextCursor);
+      
+    return sponsors;
   }
 }

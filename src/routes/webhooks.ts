@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import express, { Request } from 'express';
-import { SponsorshipCreatedJob } from '../types';
-import { getSponsorshipCreatedQueue } from '../utils/utils';
+import { SponsorshipJob } from '../types';
+import { getSponsorshipQueue } from '../utils/utils';
 
 type SponsorWebHookRequest = {
   config: {
@@ -22,7 +22,7 @@ type GetWebhookRoutesArgs = {
   db: PrismaClient
 }
 
-const queue = getSponsorshipCreatedQueue();
+const queue = getSponsorshipQueue();
 
 export default function getWebhookRoutes({ db }: GetWebhookRoutesArgs) {
   const webhookRoutes = express.Router();
@@ -44,13 +44,13 @@ export default function getWebhookRoutes({ db }: GetWebhookRoutesArgs) {
           case 'tier_changed':
           {
             // add the new job to the queue
-            const job = queue.createJob<SponsorshipCreatedJob>({
+            const job = queue.createJob<SponsorshipJob>({
               ownerId: user.id,
               sponsor: sponsor.login,
               amount: action !== 'cancelled'? parseInt(tier.monthly_price_in_dollars): 0
             });
 
-            job.save();
+            await job.save();
   
             res.sendStatus(200);
   

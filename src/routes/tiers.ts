@@ -1,6 +1,7 @@
 import { PrismaClient, User } from '@prisma/client';
 import express, { Request, Response } from 'express';
 import GHService from '../services/gh';
+import { addTierUpdateJob } from '../utils/utils';
 
 type TierRequest = {
   title: string;
@@ -105,6 +106,8 @@ export default function getTierRoutes({ db }: GetTierRoutesArgs) {
             }
           }
         });
+
+        await addTierUpdateJob(user);
     
         res.statusCode = (201);
         res.json(tier);
@@ -139,6 +142,8 @@ export default function getTierRoutes({ db }: GetTierRoutesArgs) {
           }
         });
 
+        await addTierUpdateJob(user);
+
         res.statusCode = 200;
         res.json({});
       } else {
@@ -169,6 +174,8 @@ export default function getTierRoutes({ db }: GetTierRoutesArgs) {
             }
           }
         });
+
+        await addTierUpdateJob(user);
         
         res.statusCode = 200;
         res.json({});
@@ -203,6 +210,8 @@ export default function getTierRoutes({ db }: GetTierRoutesArgs) {
               id: userTier.id
             }
           });
+
+          await addTierUpdateJob(user);
 
           res.statusCode = 201;
           res.json(tier);
@@ -260,6 +269,9 @@ export default function getTierRoutes({ db }: GetTierRoutesArgs) {
                         }
                       }
                     });
+
+        // realign sponsors
+        await addTierUpdateJob(user);
 
         res.statusCode = 200;
         res.json(repo);
