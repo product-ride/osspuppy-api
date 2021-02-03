@@ -11,8 +11,13 @@ const { NODE_ENV } = loadConfig();
 const isProd = NODE_ENV === 'production';
 // in production check everyday at 12:00 AM and in dev check every 5 seconds
 const pendingSponsorJobCron = isProd? '0 0 * * * *': '*/5 * * * * *';
-const pendingSponsorJob = new CronJob(pendingSponsorJobCron, () => {
+const pendingSponsorJob = new CronJob(pendingSponsorJobCron, async () => {
   // add jobs to update the pending sponsors
+  const pendingTransactions = await db.pendingTransactions.findMany({
+    where: {
+      done: false
+    }
+  });
 });
 
 // run the cron task

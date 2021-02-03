@@ -72,12 +72,41 @@ export async function updateRepoAccessForUser({
     for (const repo of eligibleTier.repositories) {
       try {
         await gh.addCollaborator(repo.name, repo.ownerOrOrg, sponsor);
+        await db.transactionHistory.create({
+          data: {
+            action: 'ADD_COLLABORATOR',
+            date: new Date(),
+            repo: `${repo.ownerOrOrg}/${repo.name}`,
+            sponsor,
+            owner: {
+              connect: {
+                id: owner.id
+              }
+            }
+          }
+        });
 
         console.log(`added ${sponsor} as collaborator to repo ${repo.name} of ${owner.username}`);
       }
       catch(err) {
         console.log(err);
         console.log(`failed to add ${sponsor} as collaborator to repo ${repo.name} of ${owner.username}`);
+
+        db.transactionHistory.create({
+          data: {
+            action: 'FAIL_ADD_COLLABORATOR',
+            date: new Date(),
+            repo: `${repo.ownerOrOrg}/${repo.name}`,
+            sponsor,
+            owner: {
+              connect: {
+                id: owner.id
+              }
+            }
+          }
+        })
+        .then(() => null)
+        .catch(() => null);
       }
     }
   }
@@ -87,9 +116,39 @@ export async function updateRepoAccessForUser({
       try {
         await gh.removeCollaborator(repo.name, repo.ownerOrOrg, sponsor);
 
+        await db.transactionHistory.create({
+          data: {
+            action: 'REMOVE_COLLABORATOR',
+            date: new Date(),
+            repo: `${repo.ownerOrOrg}/${repo.name}`,
+            sponsor,
+            owner: {
+              connect: {
+                id: owner.id
+              }
+            }
+          }
+        });
+
         console.log(`removed ${sponsor} as collaborator to repo ${repo.name} of ${repo.ownerOrOrg}`);
       } catch {
         console.log(`failed to remove ${sponsor} as collaborator to repo ${repo.name} of ${repo.ownerOrOrg}`);
+
+        db.transactionHistory.create({
+          data: {
+            action: 'FAIL_REMOVE_COLLABORATOR',
+            date: new Date(),
+            repo: `${repo.ownerOrOrg}/${repo.name}`,
+            sponsor,
+            owner: {
+              connect: {
+                id: owner.id
+              }
+            }
+          }
+        })
+        .then(() => null)
+        .catch(() => null);
       }
     }
   }

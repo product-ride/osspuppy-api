@@ -24,20 +24,19 @@ app.use(morgan(isProd? 'short': 'dev'));
 app.use(express.json());
 
 // setup routes
-app.use('/webhooks', getWebhookRoutes({ db, gh }));
+app.use('/webhooks', getWebhookRoutes({ db }));
 app.use(getAuthRoutes({
   db,
-  frontendURI: FRONTEND_URI,
-  gh
+  frontendURI: FRONTEND_URI
 }));
 
 // setup routes that need auth protection
 const protectedRoutes = express.Router();
-const authMiddleware = getAuthMiddleware({ db, gh });
+const authMiddleware = getAuthMiddleware({ db });
 const corsMiddleware = getCorsMiddleware();
 
 app.use('/api', corsMiddleware, authMiddleware, protectedRoutes);
-protectedRoutes.use('/tiers', getTierRoutes({ db, gh }));
+protectedRoutes.use('/tiers', getTierRoutes({ db }));
 
 app.listen(PORT, () => {
   if (isProd) {

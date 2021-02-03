@@ -1,15 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
-import GHService from '../services/gh';
 import { loadConfig } from '../utils/utils';
 
 type GetAuthMiddlewareArgs = {
-  db: PrismaClient,
-  gh: GHService
+  db: PrismaClient
 };
 
-export default function getAuthMiddleware({ db, gh }: GetAuthMiddlewareArgs) {
+export default function getAuthMiddleware({ db }: GetAuthMiddlewareArgs) {
   const { JWT_SECRET } = loadConfig(); 
 
   // setup passport authentication
@@ -23,8 +21,6 @@ export default function getAuthMiddleware({ db, gh }: GetAuthMiddlewareArgs) {
         db.user.findOne({ where: { username: payload.sub } })
           .then((user) => {
             if (user) {
-              if(user.ghToken) gh.updateToken(user.ghToken);
-
               return done(null, user);
             } else {
               return done(null, false);

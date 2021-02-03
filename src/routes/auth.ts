@@ -7,13 +7,13 @@ import { v4 as uuid } from 'uuid';
 type GetAuthRoutesArgs = {
   db: PrismaClient,
   frontendURI: string;
-  gh: GHService
 }
 
-export default function getAuthRoutes({ db, frontendURI, gh }: GetAuthRoutesArgs) {
+export default function getAuthRoutes({ db, frontendURI }: GetAuthRoutesArgs) {
   const authRoutes = express.Router();
   const { NODE_ENV } = loadConfig();
   const isProd = NODE_ENV === 'production';
+  const gh = new GHService();
 
   // backdoor to generate usertoken in development only
   if (!isProd) {

@@ -1,4 +1,4 @@
-import { PrismaClient, Tier, User } from '@prisma/client';
+import { PrismaClient, User } from '@prisma/client';
 import express, { Request, Response } from 'express';
 import GHService from '../services/gh';
 
@@ -20,7 +20,6 @@ type DeleteRepositoryRequest = {
 }
 
 type GetTierRoutesArgs = {
-  gh: GHService,
   db: PrismaClient
 };
 
@@ -71,7 +70,7 @@ async function validateRepositoryRequest(req: Request<{}, {}, RepositoryRequest>
   await cb();
 }
 
-export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
+export default function getTierRoutes({ db }: GetTierRoutesArgs) {
   const tierRoutes = express.Router();
 
   tierRoutes.get('/', async (req, res) => {
@@ -221,6 +220,9 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
   });
 
   tierRoutes.post('/:id/repositories', async (req: Request<{ id: string }, {}, RepositoryRequest>, res) => {
+    const user = req.user as User;
+    const gh = new GHService(user.ghToken);
+
     await validateRepositoryRequest(req, res, gh, async () => {
       try {
         const user = req.user as User;
@@ -270,6 +272,9 @@ export default function getTierRoutes({ gh, db }: GetTierRoutesArgs) {
   });
 
   tierRoutes.patch('/:id/repositories', async (req: Request<{ id: string }, {}, RepositoryRequest>, res) => {
+    const user = req.user as User;
+    const gh = new GHService(user.ghToken);
+
     await validateRepositoryRequest(req, res, gh, async () => {
       try {
         const user = req.user as User;

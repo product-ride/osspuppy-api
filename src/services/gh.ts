@@ -7,7 +7,7 @@ type GHServiceOptions = {
   clientSecret: string;
   redirectURI: string;
   scope: string[];
-  token?: string;
+  token?: string | null;
 }
 
 type UserInfo = {
@@ -21,7 +21,7 @@ export default class GHService {
   private options: GHServiceOptions;
   private octokit: Octokit | null;
 
-  constructor() {
+  constructor(token?: string | null) {
     const {
       GH_CLIENT_ID,
       GH_CLIENT_SECRET,
@@ -29,12 +29,13 @@ export default class GHService {
     } = loadConfig();
     
     this.options = {
+      token,
       clientId: GH_CLIENT_ID,
       clientSecret: GH_CLIENT_SECRET,
       redirectURI: GH_REDIRECT_URI,
       scope: ['repo', 'read:name'] //read:name to read a user's profile data.
     };
-    this.octokit = null;
+    this.octokit = this.options.token? new Octokit({ auth: token }): null;
   }
 
   async auth(code: string) {
