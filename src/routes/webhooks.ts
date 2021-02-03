@@ -67,12 +67,18 @@ export default function getWebhookRoutes({ db }: GetWebhookRoutesArgs) {
                   connect: {
                     id: user.id
                   }
-                }
+                },
+                minAmount: action === 'pending_tier_change'? parseInt(tier.monthly_price_in_dollars): 0
               }
             });
+
+            res.sendStatus(200);
+
+            break;
           }
           default: {
             console.log('sponshorship webhook handling not yet implemented');
+            res.sendStatus(500);
           }
         }
       }

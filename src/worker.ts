@@ -15,9 +15,42 @@ const pendingSponsorJob = new CronJob(pendingSponsorJobCron, async () => {
   // add jobs to update the pending sponsors
   const pendingTransactions = await db.pendingTransactions.findMany({
     where: {
-      done: false
+      AND: {
+        done: false,
+        effectiveDate: {
+          lte: new Date()
+        }
+      }
     }
   });
+
+  if (pendingTransactions.length > 0) {
+    console.log('Got some pending transactions');
+
+    for (const pendingTransaction of pendingTransactions) {
+      const queue = getSponsorshipCreatedQueue();
+
+      // add the new job to the queue
+      const job = queue.createJob<SponsorshipCreatedJob>({
+        ownerId: pendingTransaction.ownerId,
+        sponsor: pendingTransaction.sponsor,
+        amount: pendingTransaction.minAmount
+      });
+
+      job.save();
+
+      await db.pendingTransactions.update({
+        data: {
+          done: true
+        },
+        where: {
+          id: pendingTransaction.id
+        }
+      });
+
+      console.log(`Added transaction ${pendingTransaction.id} to queue`);
+    }
+  }
 });
 
 // run the cron task
