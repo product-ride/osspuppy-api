@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import express, { Request } from 'express';
+import db from '../db/db';
 import { SponsorshipJob } from '../types';
 import { getSponsorshipQueue } from '../utils/utils';
 
@@ -18,13 +19,9 @@ type SponsorWebHookRequest = {
   }
 }
 
-type GetWebhookRoutesArgs = {
-  db: PrismaClient
-}
-
 const queue = getSponsorshipQueue();
 
-export default function getWebhookRoutes({ db }: GetWebhookRoutesArgs) {
+export default function getWebhookRoutes() {
   const webhookRoutes = express.Router();
 
   webhookRoutes.post('/sponsor', async (req: Request<{}, {}, SponsorWebHookRequest>, res) => {

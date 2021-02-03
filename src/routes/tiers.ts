@@ -2,6 +2,7 @@ import { PrismaClient, User } from '@prisma/client';
 import express, { Request, Response } from 'express';
 import GHService from '../services/gh';
 import { addTierUpdateJob } from '../utils/utils';
+import db from '../db/db';
 
 type TierRequest = {
   title: string;
@@ -19,10 +20,6 @@ type DeleteRepositoryRequest = {
   name: string;
   ownerOrOrg: string;
 }
-
-type GetTierRoutesArgs = {
-  db: PrismaClient
-};
 
 async function validateTierRequest(req: Request<{}, {}, TierRequest>, res: Response, cb: () => void) {
   const { title, description, minAmount } = req.body;
@@ -71,7 +68,7 @@ async function validateRepositoryRequest(req: Request<{}, {}, RepositoryRequest>
   await cb();
 }
 
-export default function getTierRoutes({ db }: GetTierRoutesArgs) {
+export default function getTierRoutes() {
   const tierRoutes = express.Router();
 
   tierRoutes.get('/', async (req, res) => {

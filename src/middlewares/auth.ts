@@ -1,13 +1,9 @@
-import { PrismaClient } from '@prisma/client';
 import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
+import db from '../db/db';
 import { loadConfig } from '../utils/utils';
 
-type GetAuthMiddlewareArgs = {
-  db: PrismaClient
-};
-
-export default function getAuthMiddleware({ db }: GetAuthMiddlewareArgs) {
+export default function getAuthMiddleware() {
   const { JWT_SECRET } = loadConfig(); 
 
   // setup passport authentication

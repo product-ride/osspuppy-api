@@ -12,6 +12,7 @@ export function generateJwtForUser(user: User) {
   return jsonwebtoken.sign(
     {
       sub: user.username,
+      name: user.name,
       avatar: user.avatar,
       email: user.email,
       sponsorWebhookSecret: user.sponsorWebhookSecret

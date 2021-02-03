@@ -1,17 +1,12 @@
-import { PrismaClient } from '@prisma/client';
 import express from 'express';
 import GHService from '../services/gh';
 import { generateJwtForUser, loadConfig } from '../utils/utils';
 import { v4 as uuid } from 'uuid';
+import db from '../db/db';
 
-type GetAuthRoutesArgs = {
-  db: PrismaClient,
-  frontendURI: string;
-}
-
-export default function getAuthRoutes({ db, frontendURI }: GetAuthRoutesArgs) {
+export default function getAuthRoutes() {
   const authRoutes = express.Router();
-  const { NODE_ENV } = loadConfig();
+  const { NODE_ENV, FRONTEND_URI } = loadConfig();
   const isProd = NODE_ENV === 'production';
   const gh = new GHService();
 
@@ -70,7 +65,7 @@ export default function getAuthRoutes({ db, frontendURI }: GetAuthRoutesArgs) {
 
       const token = generateJwtForUser(user);
 
-      res.redirect(`${frontendURI}?token=${token}`);
+      res.redirect(`${FRONTEND_URI}?token=${token}`);
     } catch (err) {
       console.log(err);
       
