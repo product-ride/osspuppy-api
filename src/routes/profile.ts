@@ -24,6 +24,7 @@ export function getProfileRoutes() {
       if (user) {
         const profileDetails = {
           name: user.name,
+          bio: user.bio,
           username: user.username,
           tiers: user.Tier,
           avatar: user.avatar

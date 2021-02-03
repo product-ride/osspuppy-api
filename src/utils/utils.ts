@@ -15,6 +15,7 @@ export function generateJwtForUser(user: User) {
       name: user.name,
       avatar: user.avatar,
       email: user.email,
+      bio: user.bio,
       sponsorWebhookSecret: user.sponsorWebhookSecret
     },
     JWT_SECRET

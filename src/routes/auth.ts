@@ -50,13 +50,16 @@ export default function getAuthRoutes() {
           avatar: userInfo.avatar,
           email: userInfo.email,
           ghToken: ghAccessToken,
+          bio: userInfo.bio,
           sponsorWebhookSecret: uuid()
         },
         update: {
-          ghToken: ghAccessToken,
           name: userInfo.name || userInfo.username,
           username: userInfo.username,
-          avatar: userInfo.avatar
+          avatar: userInfo.avatar,
+          email: userInfo.email,
+          ghToken: ghAccessToken,
+          bio: userInfo.bio
         },
         where: {
           username: userInfo.username

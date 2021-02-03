@@ -16,6 +16,7 @@ type UserInfo = {
   username: string;
   email: string | null;
   avatar: string;
+  bio?: string;
 }
 
 export default class GHService {
@@ -79,6 +80,7 @@ export default class GHService {
 
     return {
       avatar: ghResponse.data.avatar_url,
+      bio: ghResponse.data.bio,
       email: ghResponse.data.email,
       username: ghResponse.data.login,
       name: ghResponse.data.name
