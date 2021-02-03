@@ -7,7 +7,7 @@ import getAuthRoutes from './routes/auth';
 import { loadConfig } from './utils/utils';
 import getWebhookRoutes from './routes/webhooks';
 import getAuthMiddleware from './middlewares/auth';
-import getCorsMiddleware from './middlewares/cors';
+import getRestrictiveCorsMiddleware, { getOpenCorsMiddleware } from './middlewares/cors';
 import { getProfileRoutes } from './routes/profile';
 
 // load configurations from .env file or environmental variables
@@ -17,22 +17,23 @@ const {
 } = loadConfig();
 const app = express();
 const isProd = NODE_ENV === 'production';
-const corsMiddleware = getCorsMiddleware();
+const restrictiveCorsMiddleware = getRestrictiveCorsMiddleware();
+const openCorsMiddleware = getOpenCorsMiddleware();
 
 // setup middlewares
 app.use(morgan(isProd? 'short': 'dev'));
 app.use(express.json());
 
 // setup routes
-app.use('/webhooks', getWebhookRoutes());
+app.use('/webhooks', openCorsMiddleware, getWebhookRoutes());
 app.use(getAuthRoutes());
-app.use('/profile', corsMiddleware, getProfileRoutes());
+app.use('/profile', openCorsMiddleware, getProfileRoutes());
 
 // setup routes that need auth protection
 const protectedRoutes = express.Router();
 const authMiddleware = getAuthMiddleware();
 
-app.use('/api', corsMiddleware, authMiddleware, protectedRoutes);
+app.use('/api', restrictiveCorsMiddleware, authMiddleware, protectedRoutes);
 protectedRoutes.use('/tiers', getTierRoutes());
 
 app.listen(PORT, () => {
