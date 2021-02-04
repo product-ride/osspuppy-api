@@ -24,10 +24,9 @@ const queue = getSponsorshipQueue();
 export default function getWebhookRoutes() {
   const webhookRoutes = express.Router();
 
-  webhookRoutes.post('/sponsor', async (req: Request<{}, {}, SponsorWebHookRequest>, res) => {
-    console.log(req.body);
-
-    const { config, action, tier, sponsor, effective_date } = req.body;
+  webhookRoutes.post('/sponsor', async (req: Request<{}, {}, string>, res) => {
+    console.log('vilva', typeof req.body);
+    const { config, action, tier, sponsor, effective_date } = JSON.parse(req.body);
   
     try {
       const user = await db.user.findOne({ where: { sponsorWebhookSecret: config.secret } });
