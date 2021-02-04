@@ -1,7 +1,7 @@
 import { DoneCallback, Job } from 'bee-queue';
 import db from './db/db';
 import GHService from './services/gh';
-import { Sponsor, SponsorshipJob, TierUpdateJob } from './types';
+import { SponsorshipJob, TierUpdateJob } from './types';
 import { getSponsorshipQueue, getTierUpdateQueue, loadConfig, updateRepoAccessForUser } from './utils/utils';
 import { CronJob } from 'cron';
 
