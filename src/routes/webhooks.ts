@@ -8,14 +8,16 @@ type SponsorWebHookRequest = {
   config: {
     secret: string
   },
-  action: 'created' | 'cancelled' | 'edited' | 'tier_changed' | 'pending_cancellation' | 'pending_cancellation' | 'pending_tier_change',
-  effective_date: string,
-  privacy_level: 'public' | 'private',
-  tier: {
-    monthly_price_in_dollars: string
-  },
-  sponsor: {
-    login: string
+  sponsorship: {
+    action: 'created' | 'cancelled' | 'edited' | 'tier_changed' | 'pending_cancellation' | 'pending_cancellation' | 'pending_tier_change',
+    effective_date: string,
+    privacy_level: 'public' | 'private',
+    tier: {
+      monthly_price_in_dollars: string
+    },
+    sponsor: {
+      login: string
+    }
   }
 }
 
@@ -24,12 +26,17 @@ const queue = getSponsorshipQueue();
 export default function getWebhookRoutes() {
   const webhookRoutes = express.Router();
 
-  webhookRoutes.post('/sponsor', async (req: Request<{}, {}, any>, res) => {
-    console.log('vilva', typeof req.body, req.body?.sponsor);
-    const { config, action, tier, sponsor, effective_date } = JSON.parse(req.body);
+  webhookRoutes.post('/sponsor', async (req: Request<{}, {}, SponsorWebHookRequest>, res) => {
+    const { config, sponsorship } = req.body;
+    const { action, tier, sponsor, effective_date } = sponsorship;
+
+    console.log(config);
   
     try {
       const user = await db.user.findOne({ where: { sponsorWebhookSecret: config.secret } });
+
+      console.log(user);
+      console.log(action, tier, sponsor, effective_date);
   
       if (!user) {
         // someone is fucking with us
