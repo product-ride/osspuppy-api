@@ -25,6 +25,8 @@ export default function getWebhookRoutes() {
   const webhookRoutes = express.Router();
 
   webhookRoutes.post('/sponsor', async (req: Request<{}, {}, SponsorWebHookRequest>, res) => {
+    console.log(req.body);
+
     const { config, action, tier, sponsor, effective_date } = req.body;
   
     try {
