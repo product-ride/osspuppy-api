@@ -6,6 +6,14 @@ import db from "../db/db";
 import GHService from "../services/gh";
 import { TierUpdateJob } from "../types";
 
+const sponsorShipQueue = new Queue('sponsors', {
+  redis: process.env.REDIS_URL || 'redis://localhost:6379'
+});
+
+const tierUpdateQueue = new Queue('tier-update', {
+  redis: process.env.REDIS_URL || 'redis://localhost:6379'
+});
+
 export function generateJwtForUser(user: User) {
   const { JWT_SECRET } = loadConfig();
 
@@ -48,19 +56,11 @@ export function loadConfig() {
 }
 
 export function getSponsorshipQueue() {
-  const queue = new Queue('sponsors', {
-    redis: process.env.REDIS_URL || 'redis://localhost:6379'
-  });
-
-  return queue;
+  return sponsorShipQueue;
 }
 
 export function getTierUpdateQueue() {
-  const queue = new Queue('tier-update', {
-    redis: process.env.REDIS_URL || 'redis://localhost:6379'
-  });
-
-  return queue;
+  return tierUpdateQueue;
 }
 
 type UpdateRepoAccessForUserArgs = {
