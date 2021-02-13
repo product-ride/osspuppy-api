@@ -28,8 +28,15 @@ export default function getWebhookRoutes() {
 
     try {
       const user = await db.user.findOne({ where: { username } });
-      const webhookSecret = user?.sponsorWebhookSecret || '';
-      const signature = req.get('HTTP_X_HUB_SIGNATURE_256') || '';
+      const webhookSecret = user?.sponsorWebhookSecret;
+      const signature = req.get('HTTP_X_HUB_SIGNATURE_256');
+
+      if (!webhookSecret || !signature) {
+        // someone is fucking with us
+        res.sendStatus(401);
+
+        return;
+      }
 
       if (!user || !verifyGHWebhook(signature, JSON.stringify(req.body), webhookSecret)) {
         // someone is fucking with us
