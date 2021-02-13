@@ -4,13 +4,17 @@ import { load } from 'ts-dotenv';
 import Queue from 'bee-queue';
 import db from "../db/db";
 import GHService from "../services/gh";
-import { TierUpdateJob } from "../types";
+import { DeleteRepoJob, TierUpdateJob } from "../types";
 
-const sponsorShipQueue = new Queue('sponsors', {
+export const sponsorShipQueue = new Queue('sponsors', {
   redis: process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
-const tierUpdateQueue = new Queue('tier-update', {
+export const tierUpdateQueue = new Queue('tier-update', {
+  redis: process.env.REDIS_URL || 'redis://localhost:6379'
+});
+
+export const repoDeleteQueue = new Queue('repo-delete', {
   redis: process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
@@ -55,14 +59,6 @@ export function loadConfig() {
   });
 }
 
-export function getSponsorshipQueue() {
-  return sponsorShipQueue;
-}
-
-export function getTierUpdateQueue() {
-  return tierUpdateQueue;
-}
-
 type UpdateRepoAccessForUserArgs = {
   gh: GHService,
   owner: User,
@@ -71,9 +67,14 @@ type UpdateRepoAccessForUserArgs = {
 }
 
 export async function addTierUpdateJob(user: User) {
-  const tierUpdateQueue = getTierUpdateQueue();
-
   await tierUpdateQueue.createJob<TierUpdateJob>({ userId: user.id }).save();
+}
+
+export async function addDeleteRepoJob(ownerOrOrg: string, repo: string) {
+  await repoDeleteQueue.createJob<DeleteRepoJob>({
+    ownerOrOrg,
+    repo
+  });
 }
 
 export async function updateRepoAccessForUser({

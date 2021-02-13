@@ -1,12 +1,10 @@
 import { DoneCallback, Job } from 'bee-queue';
 import db from './db/db';
 import GHService from './services/gh';
-import { SponsorshipJob, TierUpdateJob } from './types';
-import { getSponsorshipQueue, getTierUpdateQueue, loadConfig, updateRepoAccessForUser } from './utils/utils';
+import { DeleteRepoJob, SponsorshipJob, TierUpdateJob } from './types';
+import { loadConfig, repoDeleteQueue, sponsorShipQueue, tierUpdateQueue, updateRepoAccessForUser } from './utils/utils';
 import { CronJob } from 'cron';
 
-const sponsorshipQueue = getSponsorshipQueue();
-const tierUpdateQueue = getTierUpdateQueue();
 const { NODE_ENV } = loadConfig();
 const isProd = NODE_ENV === 'production';
 // in production check everyday at 12:00 AM and in dev check every 5 seconds
@@ -28,10 +26,8 @@ const pendingSponsorJob = new CronJob(pendingSponsorJobCron, async () => {
     console.log('Got some pending transactions');
 
     for (const pendingTransaction of pendingTransactions) {
-      const queue = getSponsorshipQueue();
-
       // add the new job to the queue
-      const job = queue.createJob<SponsorshipJob>({
+      const job = sponsorShipQueue.createJob<SponsorshipJob>({
         ownerId: pendingTransaction.ownerId,
         sponsor: pendingTransaction.sponsor,
         amount: pendingTransaction.minAmount
@@ -56,7 +52,7 @@ const pendingSponsorJob = new CronJob(pendingSponsorJobCron, async () => {
 // run the cron task
 pendingSponsorJob.start();
 
-sponsorshipQueue.process(async (job: Job<SponsorshipJob>, done: DoneCallback<any>) => {
+sponsorShipQueue.process(async (job: Job<SponsorshipJob>, done: DoneCallback<any>) => {
   const { amount, ownerId, sponsor } = job.data;
   const gh = new GHService();
 
@@ -91,9 +87,44 @@ sponsorshipQueue.process(async (job: Job<SponsorshipJob>, done: DoneCallback<any
   }
 });
 
+repoDeleteQueue.process(async (job: Job<DeleteRepoJob>, done: DoneCallback<any>) => {
+  const gh = new GHService();
+  const { repo, ownerOrOrg } = job.data;
+
+  try {
+    const user = await db.user.findOne({
+      where: {
+        username: ownerOrOrg
+      }
+    });
+  
+    if (user) {
+      if (user.ghToken) {
+        gh.updateToken(user.ghToken);
+  
+        const sponsors = await gh.getAllSponsors();
+
+        for (const sponsor of sponsors) {
+          await gh.removeCollaborator(repo, ownerOrOrg, sponsor.sponsor);
+        }
+
+        done(null);
+      }
+      else {
+        done(new Error(`No ghToken was found for user ${user.username}`));
+      }
+    } else {
+      done(null);
+    }
+  
+    done(null);
+  } catch (err) {
+    done(err); 
+  }
+});
+
 tierUpdateQueue.process(async (job: Job<TierUpdateJob>, done: DoneCallback<any>) => {
   const gh = new GHService();
-  const sponsorshipQueue = getSponsorshipQueue();
   try {
     const user = await db.user.findOne({
       where: {
@@ -108,12 +139,14 @@ tierUpdateQueue.process(async (job: Job<TierUpdateJob>, done: DoneCallback<any>)
         const sponsors = await gh.getAllSponsors();
 
         for (const sponsor of sponsors) {
-          await sponsorshipQueue.createJob<SponsorshipJob>({
+          await sponsorShipQueue.createJob<SponsorshipJob>({
             amount: sponsor.minAmount,
             ownerId: user.id,
             sponsor: sponsor.sponsor
           }).save();
         }
+
+        done(null);
       }
       else {
         done(new Error(`No ghToken was found for user ${user.username}`));

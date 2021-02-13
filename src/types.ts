@@ -8,6 +8,11 @@ export type TierUpdateJob = {
   userId: number;
 }
 
+export type DeleteRepoJob = {
+  ownerOrOrg: string;
+  repo: string;
+}
+
 export type GHSponsor = {
   sponsorEntity: {
     login: string

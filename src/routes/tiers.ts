@@ -1,7 +1,7 @@
 import { PrismaClient, User } from '@prisma/client';
 import express, { Request, Response } from 'express';
 import GHService from '../services/gh';
-import { addTierUpdateJob } from '../utils/utils';
+import { addDeleteRepoJob, addTierUpdateJob } from '../utils/utils';
 import db from '../db/db';
 
 type TierRequest = {
@@ -126,7 +126,11 @@ export default function getTierRoutes() {
       const userInstance = await db.user.findOne({
         where: { id: user.id },
         include: {
-          Tier: true
+          Tier: {
+            include: {
+              repositories: true
+            }
+          }
         }
       });
       const tier = userInstance?.Tier.find((tier) => tier.id === tierId);
@@ -139,7 +143,9 @@ export default function getTierRoutes() {
           }
         });
 
-        await addTierUpdateJob(user);
+        for (const repo of tier.repositories) {
+          await addDeleteRepoJob(user.username, repo.name)
+        }
 
         res.statusCode = 200;
         res.json({});
@@ -172,7 +178,7 @@ export default function getTierRoutes() {
           }
         });
 
-        await addTierUpdateJob(user);
+        await addDeleteRepoJob(ownerOrOrg, name);
         
         res.statusCode = 200;
         res.json({});
