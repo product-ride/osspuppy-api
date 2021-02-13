@@ -74,7 +74,7 @@ export async function addDeleteRepoJob(ownerOrOrg: string, repo: string) {
   await repoDeleteQueue.createJob<DeleteRepoJob>({
     ownerOrOrg,
     repo
-  });
+  }).save();
 }
 
 export async function updateRepoAccessForUser({

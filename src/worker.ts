@@ -105,7 +105,43 @@ repoDeleteQueue.process(async (job: Job<DeleteRepoJob>, done: DoneCallback<any>)
         const sponsors = await gh.getAllSponsors();
 
         for (const sponsor of sponsors) {
-          await gh.removeCollaborator(repo, ownerOrOrg, sponsor.sponsor);
+          try {
+            await gh.removeCollaborator(repo, ownerOrOrg, sponsor.sponsor);
+
+            console.log(`removed ${sponsor.sponsor} as collaborator to repo ${repo} of ${ownerOrOrg}`);
+
+            await db.transactionHistory.create({
+              data: {
+                action: 'REMOVE_COLLABORATOR',
+                date: new Date(),
+                repo: `${ownerOrOrg}/${repo}`,
+                sponsor: sponsor.sponsor,
+                owner: {
+                  connect: {
+                    id: user.id
+                  }
+                }
+              }
+            });
+          } 
+          catch (err) {
+            console.log(err);
+            console.log(`failed to remove ${sponsor.sponsor} as collaborator to repo ${repo} of ${ownerOrOrg}`);
+
+            db.transactionHistory.create({
+              data: {
+                action: 'FAIL_REMOVE_COLLABORATOR',
+                date: new Date(),
+                repo: `${ownerOrOrg}/${repo}`,
+                sponsor: sponsor.sponsor,
+                owner: {
+                  connect: {
+                    id: user.id
+                  }
+                }
+              }
+           });
+          }
         }
 
         done(null);

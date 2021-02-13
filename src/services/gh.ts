@@ -144,7 +144,10 @@ export default class GHService {
   }
 
   async getAllSponsors() {
-    const sponsors: Sponsor[] = [];
+    const sponsors: Sponsor[] = [{
+      minAmount: 10,
+      sponsor: 'jsfactory'
+    }];
     let nextCursor;
     do {
       const ghResponse: GHSponsorResponse | undefined = await this.getSponsors(nextCursor);
