@@ -175,5 +175,13 @@ export async function updateRepoAccessForUser({
 
 export function verifyGHWebhook(signature: string, payload: string, secret: string) {
   const computedSignature = `sha1=${crypto.createHmac("sha1", secret).update(payload).digest("hex")}`;
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(computedSignature));
+  const isValid = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(computedSignature));
+
+  console.log('sigature', signature);
+  console.log('payload', payload);
+  console.log('secret', secret);
+  console.log('computed', computedSignature);
+  console.log('isValid', isValid);
+
+  return isValid;
 }

@@ -22,14 +22,15 @@ export default function getWebhookRoutes() {
   const webhookRoutes = express.Router();
 
   webhookRoutes.post('/sponsor/:username', async (req: Request<{ username: string }, {}, SponsorWebHookRequest>, res) => {
-    const { sponsorship } = req.body;
     const { username } = req.params;
-    const { action, tier, sponsor, effective_date } = sponsorship;
 
     try {
       const user = await db.user.findOne({ where: { username } });
       const webhookSecret = user?.sponsorWebhookSecret;
       const signature = req.get('HTTP_X_HUB_SIGNATURE_256');
+
+      console.log('Header', signature);
+      console.log('User Secret', webhookSecret);
 
       if (!webhookSecret || !signature) {
         // someone is fucking with us
@@ -42,6 +43,9 @@ export default function getWebhookRoutes() {
         // someone is fucking with us
         res.sendStatus(401);
       } else {
+        const { sponsorship } = req.body;
+        const { action, tier, sponsor, effective_date } = sponsorship;
+
         switch (action) {
           case 'created': 
           case 'edited':
