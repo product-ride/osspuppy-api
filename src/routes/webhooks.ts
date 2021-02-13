@@ -1,13 +1,10 @@
-import { PrismaClient } from '@prisma/client';
 import express, { Request } from 'express';
 import db from '../db/db';
 import { SponsorshipJob } from '../types';
-import { sponsorShipQueue } from '../utils/utils';
+import { sponsorShipQueue, verifyGHWebhook } from '../utils/utils';
+
 
 type SponsorWebHookRequest = {
-  config: {
-    secret: string
-  },
   sponsorship: {
     action: 'created' | 'cancelled' | 'edited' | 'tier_changed' | 'pending_cancellation' | 'pending_cancellation' | 'pending_tier_change',
     effective_date: string,
@@ -24,14 +21,17 @@ type SponsorWebHookRequest = {
 export default function getWebhookRoutes() {
   const webhookRoutes = express.Router();
 
-  webhookRoutes.post('/sponsor', async (req: Request<{}, {}, SponsorWebHookRequest>, res) => {
-    const { config, sponsorship } = req.body;
+  webhookRoutes.post('/sponsor/:username', async (req: Request<{ username: string }, {}, SponsorWebHookRequest>, res) => {
+    const { sponsorship } = req.body;
+    const { username } = req.params;
     const { action, tier, sponsor, effective_date } = sponsorship;
 
     try {
-      const user = await db.user.findOne({ where: { sponsorWebhookSecret: config.secret } });
+      const user = await db.user.findOne({ where: { username } });
+      const webhookSecret = user?.sponsorWebhookSecret || '';
+      const signature = req.get('HTTP_X_HUB_SIGNATURE_256') || '';
 
-      if (!user) {
+      if (!user || !verifyGHWebhook(signature, JSON.stringify(req.body), webhookSecret)) {
         // someone is fucking with us
         res.sendStatus(401);
       } else {

@@ -5,6 +5,7 @@ import Queue from 'bee-queue';
 import db from "../db/db";
 import GHService from "../services/gh";
 import { DeleteRepoJob, TierUpdateJob } from "../types";
+import crypto from 'crypto';
 
 export const sponsorShipQueue = new Queue('sponsors', {
   redis: process.env.REDIS_URL || 'redis://localhost:6379'
@@ -170,4 +171,9 @@ export async function updateRepoAccessForUser({
       }
     }
   }
+}
+
+export function verifyGHWebhook(signature: string, payload: string, secret: string) {
+  const computedSignature = `sha1=${crypto.createHmac("sha1", secret).update(payload).digest("hex")}`;
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(computedSignature));
 }
